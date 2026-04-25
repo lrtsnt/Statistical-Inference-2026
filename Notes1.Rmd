@@ -1,0 +1,840 @@
+---
+title: "Statistical Inference"
+author: "SL"
+date: "2026-04-23"
+output: 
+  html_document:
+    toc: true
+bibliography: references.bib
+runtime: shiny
+---
+
+
+# Classical testing theory: Fisher and Neyman-Pearson approaches.
+
+
+## Preliminaries  {.section}
+
+Let us start with a quick review of what a test is.
+In the common view, an hypothesisis to be tested is defined relative of its *complementary hypothesis*: if the data suggest it is false, what should we believe to be true?
+
+**Def:** The two complementary hypotheses are called *null hypothesis* ($H_0$) and *alternative hypothesis* ($H_1$)
+
+The Null Hypothesis is the hypothesis that is
+held to be true unless sufficient evidence to the contrary is obtained
+
+In hypothesis testing, the objective is to use data to *decide* if $H_0$ is plausible, or if the evidence does not support it enough and we need to reject it (although it is ofter true that we are actually hoping to reject it).
+
+The definition of a hypothesis test requires the definition of a model (parametric or not) and a specification of the null and alternative hypotheses as submodels.
+
+
+### Parametric model
+For the moment, we consider the case of a parametric model:
+$$\left\{ f(\cdot \mid \theta) : \theta \in \Theta \right\}$$
+where $\theta$ is a (possibly vector values) parameter, $\Theta$ is the parameter space, $f(\cdot\mid \theta)$ is a family of distributions (continuous or discrete, univariate or not), indexed by $\theta$.
+
+In this context, a hypothesis can take the form
+$$H_0:\theta \in \Theta_0 \quad vs \quad H_1: \theta \in \Theta_1,$$
+where typically (but not necessarily) $\Theta_1 = \Theta\setminus\Theta_0$ is the conjugate of the null parametric set.
+
+
+We can have simple and composite hypotheses:
+
+* A simple hypothesis determines completely the distribution
+of $X$, specifies only one possible distribution for the sample (in a parametric framework, it specifies exactly the parameter value). (for example given a Gaussian model with $\sigma^2=1$, the hypothesis, $H_0: \mu=0$)
+* a composite hypothesis specifies more that one possible
+distributions for the sample (for example, given a Gaussian model with $\sigma^2=1$, the hypothesis $H_0: \mu \geq 2$)
+
+
+
+### Rejection region and error types  
+
+With this setting, we can define:
+
+**Def:** A hypothesis procedure or hypothesis test is a rule that specifies:
+
+>- For which sample values the decision is made to accept $H_0$ as true
+>- For which sample values $H_0$ is rejected (and $H_1$ is accepted as true)
+
+The decision is based (typically) on the definition of a **rejection region** (or **critical region**) defined by the subset of the sample space that leads to reject the null hypothesis. 
+
+The rejection region $R$ of a hypothesis test is usually defined
+through a test statistic $W(X)$, a function of the sample
+$$R = \{\mathbf{X} : W(\mathbf{X}) > c \} \quad \Rightarrow \quad reject\; H_0$$
+$$A = \{\mathbf{X} : W(\mathbf{X}) \leq c \} \quad \Rightarrow \quad accept\; H_0$$
+The definition of $R$ as a function of $W$ directly simplifies the definition of $R$, because permits to write it as a subset of $\mathbb{R}$ instead of $\mathbb{R}^n$  
+$$R_w = \{w : W > c \}$$
+Once the region is defined, and a decision (reject or not) is taken, there is no guarantee that it is correct.
+
+
+#### Errors
+
+In fact, there are 4 possible outcomes of the decision problem, two of which correspond to *wrong decisions*: a type I error occurs if $H_0$ is rejected when it is actually true; a type II error occurs if $H_0$ is not rejected when it is actually
+false.
+ 
+
+| Decision | H0 is true | H1 is true |
+|:-----|:------:|:-------:|
+| H0 |  <span style="color: green;">Correct ($1-\alpha$) </span>  | <span style="color: red;">Type II error</span> |
+| H1 | <span style="color: red;">Type I error ($\alpha$)</span>  | <span style="color: green;">Correct</span> | 
+
+
+
+#### Power function
+
+Errors in hypothesis testing are not symmetric. 
+Conventionally, the statistical testing procedures (both Fisher and Neyman-Pearson) tend to assign a greater importance to $\alpha$, the type I error.
+This is the error that is controlled for. This is the reason why the null hypothesis is (quite often) defined as the one whose incorrect rejection is considered more severe.
+
+Unfortunately, the two error types enter into conflict: by reducing $\alpha$, the type II error increases, and vice-versa.
+
+
+
+#### Example: trade-off between Type I and Type II errors
+
+```{r, message=FALSE}
+
+library(shiny)
+library(dplyr)
+
+```
+
+
+To keep things simple, we assume the same Gaussian population $X \sim N(\mu, \sigma^2)$,
+$\sigma^2=1$ known and the following simple hypotheses:
+
+$$H_0: \mu=0 \quad vs \quad H_1: \mu = 2$$
+
+The test statistic used for this type of hypotheses is
+$$Z = \frac{\bar{X}}{ \sigma/ \sqrt{n}}$$
+The rejection region is $Z > t_{1-\alpha/2}^{(n-1)}$.
+
+
+```{r datt, echo=FALSE}
+
+
+sliderInput("alpha", label = "alpha",
+              min=0.001, max=0.25, value = 0.05, step=0.001)
+
+```
+
+The type I and type II errors can't be both minimized.
+
+```{r rej, echo=FALSE, out.width="80%"}
+
+ renderPlot({
+        #par(mar = c(5, 6, 1, .5))
+        plot(seq(-4,4,by=0.01),dnorm(seq(-4,4,by=0.01)),col = 'darkgreen', type='l', border = 'white', freq = FALSE, xlab = '', ylab = '' , main = 'distribution under H0', plot=TRUE
+      )
+        t=qnorm(1-as.numeric(input$alpha))
+        polygon(c(t,seq(t, 4 ,by=0.01),4),
+                c(0,dnorm(seq(t, 4, by=0.01)),0),
+                col = "pink", border=NA)
+      polygon(seq(-2,6,by=0.01),dnorm(seq(-2,6,by=0.01),2,1),border="darkred", col=NA, type='l', freq = FALSE, xlab = '', ylab = '' , plot=TRUE)
+      polygon(c(-2,seq(-2, t ,by=0.01),t),
+                c(0,dnorm(seq(-2, t, by=0.01),2,1),0),
+                col = "lightgreen", border=NA)
+      abline(v = t, col = "blue", lwd =3)
+      
+      }
+  )
+  
+errori = function(alpha) {
+  ret= matrix(c(alpha,pnorm(qnorm(1-alpha),2,1)),1,2)
+colnames(ret) = c("type I error", "type II error")
+rownames(ret) = "error probabilities"
+return(ret)
+}
+
+renderTable(errori(as.numeric(input$alpha)),rownames = TRUE, bordered = TRUE, digits=3)
+  
+
+```
+
+
+## Power function and Neyman-Pearson theorem {.section}
+
+We now need to recall some definitions
+
+**Def:** A test procedure with rejection region $R$, for the hypothesis
+$$H_0: \theta \in \Theta_0 \quad vs \quad H_1: \theta \in \Theta_1$$ has power function $\beta(\theta)$ defined as:
+$$\beta(\theta)=Pr(\mathbf{X} \in R \mid \theta)$$
+for $\theta \in \Theta_0\cup\Theta_1$.
+
+So, the power is the *probability to reject the null hypothesis* given a certain value of $\theta$.
+
+
+
+Let $X_1,\ldots,X_{10}$ be a random sample
+  from a population $N(\mu,\sigma^2=4)$ and let $$H_0:
+  \mu \leq 0\quad  \mbox{and } H_1:  \mu > 0$$ 
+  and let consider a test with
+  $$R=\{\bar X >1\}$$
+Then,
+\begin{eqnarray*} 
+  \beta(\mu)& =&P(\bar X >1\mid \mu=\mu) = P \left(Z > \frac{1-\mu}{\frac {2}{\sqrt {10}}}   \right)
+\end{eqnarray*}
+
+```{r, echo = FALSE, message=FALSE, out.width="50%"}
+
+mu = seq(-4,3,0.01)
+plot(mu,1-pnorm(1-mu/(2/sqrt(10))),type='l', col='darkred', ylab=expression(beta(mu)),xlab=expression(mu))
+
+```
+
+
+
+### Level and size of a test
+
+**Def:** 
+
+>- For $0 \leq \alpha\leq 1$, a test with *power function* $\beta(\theta)$ is a size $\alpha$ test if
+  $$sup_{\theta \in \Theta_0} \beta(\theta)=\alpha$$
+>- For $0 \leq \alpha\leq 1$, a test with power function $\beta(\theta)$ is a level $\alpha$ test if
+  $$sup_{\theta \in \Theta_0} \beta(\theta) \leq \alpha$$
+
+
+
+
+### Uniformly most powerful tests
+
+Fisher advocated the use of a test statistic and look for evidence agaist the null through the *significance level* but was not so concerned about the definition of an optimality procedure that could be valid *universally*.
+
+Neyman and Pearson proposed this resut because they wanted to give a mathematical justification to the tests proposed by Fisher's procedure. 
+
+Since both type I and type II errors can't be simultaneously minimized,
+Neyman and Pearson proposed to select the *best* test based on a constrained minimization problem: 
+minimization of Type II error, given the constraint on a fixed Type I error (level) $\alpha$.
+
+They elaborate the concept of Most powerful and Uniformly most powerful (UMP) tests.
+
+**Def:** Let $\mathscr{C}$ be a class of tests for testing
+  $H_0 :\theta \in \Theta_0$ versus $H_1: \theta \in \Theta_1$. 
+  A
+  test belonging to a class $\mathscr{C}$ (of possible tests), with power function $\beta(\theta)$, is a
+  uniformly most powerful (UMP) class $\mathscr{C}$ test if, $\beta(\theta) \geq \beta^\prime (\theta)$
+for every $\theta \in \Theta_1(=\Theta_0^c)$ and for every $\beta^\prime (\theta)$
+that is a power function of a test in class $\mathscr{C}$.
+
+If the chosen family $\mathscr{C}$ is the set of $\alpha$ level tests, then the definition above gives the UMP level $\alpha$ tests.
+
+If $\Theta_0=\{\theta_0\}$  and $\Theta_1=\{\theta_1\}$ (simple hypotheses), then a test satisfying the definition above is said most powerful.
+
+### Neyman-Pearson Lemma
+
+For technical reasons, it is convenient to allow a randomization mechanism, to help with the decision between $H_0$ and $H_1$.
+
+A randomized test is characterized by a *critical function* $\phi$ with range in $[0,1]$. Given $\boldsymbol x$, $\phi(\boldsymbol x)$ is the probability to reject $H_0$.
+
+In this case, the power function corresponds to the expectation of the critical function with respect to a given parameter:
+$$\beta(\theta) =  E_\theta P_\theta\left\{\mbox{reject $H_0$} \mid X \right\} = \text{E}_\theta \phi(X)$$
+Note that the set of critical functions $\Phi$ is convex: if $\phi_1$ and $\phi_2$ are critical function (belong to $\Phi$), then for any $\tau \in (0,1)$, also $\tau \phi_1 +(1-\tau)\phi_2 \in \Phi$.
+
+A nonrandomized test is a randomized test where $R=\{x: \phi(x)=1\}$.
+
+
+**Theorem (Neyman-Pearson (1933))**
+  Consider testing
+  $H_0 :\theta =\theta_0$ versus $H_1: \theta=\theta_1$
+where the pdf or pmf corresponding to $\theta_i$ is
+$f( \boldsymbol x \mid \theta_i),\,i=0,1$.
+
+(i) There exist a test $\phi$ and a constant $k$ such that
+$$E_{\theta_0} \phi(X)=\alpha \qquad \quad \mbox{and}$$
+$$\phi(x)=\left\{ \begin{array}{ll}
+1 & \mbox{when } f(x\mid \theta_1)>k f(x\mid \theta_0)\\
+0 & \mbox{when } f(x\mid \theta_1)<k f(x\mid \theta_0)
+\end{array}
+\right.
+$$
+(ii) If a test satisfies the above conditions for some $k$, then it is most powerful for testing $\theta_0$ against $\theta_1$ 
+(iii) If $\phi$ is most powerful, then there exists $k$ such that $\phi$ is defined as above (a.e.) unless there exists a test with size $<\alpha$ and power 1.
+
+
+**Remark**
+If $\phi \in \{0,1\}$ (nonrandomized test), the Neyman-Pearson Lemma states that every most powerful level $\alpha$ test, if it exists, must have the rejection region:
+$$R=\{\boldsymbol x: \, f(\boldsymbol x\mid \theta_1)\geq k f (\boldsymbol x \mid \theta_0)\}$$
+
+for some $k>0$ for which $P_{\theta_0}(\boldsymbol X \in R)=\alpha$. 
+
+Also, if a test with rejection region $R$ as above exists and $P_{\theta_0}(\boldsymbol X \in R)=\alpha$ exists, then the UMP $\alpha-$level test is a size $\alpha$ test.
+
+**Proof**
+1- Let $\alpha(k)=P_{\theta_0}\{f(x\mid \theta_1)>k f(x\mid \theta_0)\}$.
+Assume $f(x\mid \theta_0)>0$ (the probability is computed under $H_0$). 
+$\alpha(k)$ is the probability that the rv $f(X\mid \theta_1)/f(X\mid \theta_0)>k$. Thus, $1-\alpha(k)$ is a CDF (not necessarily continuous), with $\alpha(k^-)-\alpha(k)=P_{\theta_0}\left(f(X\mid \theta_1)/ f(X\mid \theta_0)=k\right)$.
+
+Given $\alpha \in (0,1)$, let $k_0$ be such that $\alpha(k_0)\leq \alpha \leq \alpha(k_0^-)$ and define
+
+$$\phi(x)=\left\{ \begin{array}{ll}
+1 & \mbox{when } f(x\mid \theta_1)>k_0 f(x\mid \theta_0)\\
+\frac{\alpha-\alpha(k_0)}{\alpha(k_0^-)-\alpha(k_0)} & \mbox{when } f(x\mid \theta_1)=k_0 f(x\mid \theta_0)\\
+0 & \mbox{when } f(x\mid \theta_1)<k_0 f(x\mid \theta_0)
+\end{array}
+\right.$$
+
+
+If $\alpha(k_0^-)-\alpha(k_0)=0$, then $P_{\theta_0}\left\{ f(x\mid \theta_1)=k_0 f(x\mid \theta_0)\right\}=0$ and $\phi$ is defined a.e.
+
+It is easy to see that the size of the test is $E_{\theta_0}\phi(X)=\alpha$
+
+2- Suppose that $\phi$ satisfies the definition of the theorem, and assume $\phi^*$ is any other test with $E_{\theta_0}\phi^*\leq \alpha$.
+
+Let $$S_+ = \{x : \phi(x)-\phi^*(x)>0\} \quad \mbox{and}\quad S_-=\{\phi(x)-\phi^*(x)<0\}$$
+
+If $x \in S_+$, then necessarily $\phi(x)>0$ and thus $f(x\mid \theta_1)\geq k f(x\mid \theta_0)$.
+If $x \in S_-$, then necessarily $\phi(x)<1$ and thus $f(x\mid \theta_1)\leq k f(x\mid \theta_0)$.
+
+Thus,
+$$\begin{split}
+& \int (\phi(x)-\phi^*(x)) (f(x\mid \theta_1)-kf(x\mid \theta_0) )dx =\cr
+& \qquad \int_{S_+\cup S_-} (\phi(x)-\phi^*(x)) (f(x\mid \theta_1)-kf(x\mid \theta_0) )dx \geq 0 \end{split}$$
+and this implies
+$$\begin{split}\beta_\phi(\theta_1)-\beta_{\phi^*}(\theta_1) & =E_{\theta_1}\phi(X)- E_{\theta_1}\phi^*(X) \cr & =\int (\phi(x)-\phi^*(x)) f(x\mid \theta_1) dx \cr
+& \geq \int (\phi(x)-\phi^*(x)) kf(x\mid \theta_0) dx \geq 0 \end{split}$$
+
+3- See [@lehmann2022testing]
+
+**Example** Suppose $X\sim binomial(2,\theta)$ and we are interested in testing $H_0: \theta=1/2$ vs $H_1:\theta=3/4$.
+
+The likelihood ratio
+$$L(X)=\frac{f_{3/4}(X)}{f_{1/2}(X)} = \frac{{2\choose X} (3/4)^X(1/4)^{2-X}}{{2\choose X} (1/2)^2}=\frac{3^X}{4} \stackrel{\tiny\mbox{(under $H_0$)}}{=} \left\{ \begin{array}{ll}
+1/4 & pr. \;1/4\\
+3/4 & pr. \; 1/2\\
+9/4 & pr. \; 1/4
+\end{array}
+\right.  $$
+
+Assume $\alpha=0.05$ is the desired level.
+
+We have $P_{\theta_0}(L(X)\leq 3/4) = 3/4 < 1-\alpha$, thus $k>3/4$, but if $k<9/4$, then $P_{\theta_0}(L(X)>k) =P_{\theta_0}(L(X)=9/4) = 1/4 > \alpha$, thus $k \geq 9/4$. 
+
+However, $k>9/4$ is also impossible, because then $P_{\theta_0}(L(X)>k)=0$ (implying $\phi=0$).
+
+Thus, we must have $k=9/4$ and $\phi(0)=\phi(1)=0$, while $\phi(2)$ is determined by:
+$$\alpha = E_{\theta_0} \phi(X) = \frac{1}{4}\phi(2) \quad \Rightarrow \phi(2)=4 \alpha . $$
+
+ From factorization theorem, it is easy to derive:
+
+
+**Corollary**
+ Consider testing
+  $H_0 :\theta =\theta_0$ versus $H_1: \theta =\theta_1$.
+  Suppose $T(\boldsymbol{X})$ is a sufficient statistics for $\theta$
+  and
+$g(t|\theta_i),\,i=0,1$ is its prob. density function corresponding to
+$\theta_i$. Then any test statistics based on $T$ with rejection
+region $S$ is a most powerful level $\alpha$ test if it satisfies
+$$t=T(\boldsymbol x) \in S\quad if \, g(t|\theta_1)>k g(t|\theta_0)$$
+and
+$$t=T(\boldsymbol x) \in S^C \quad if \, g(t|\theta_1) < k g(t|\theta_0)$$
+and
+$$\alpha=P_{\theta_0}(T \in S)$$
+
+**Example**
+$X\sim exponential(\lambda)$ and
+$$H_0: \lambda=1 \quad vs \quad H_1:\lambda=2$$
+The rejection region must be defined as: 
+$$R= \{ \boldsymbol x: k e^{-\sum_i x_i} < 2^{n}e^{-2\sum_i x_i}\}$$
+where $k$ is such that 
+\[\begin{split}P\left(X \in R\mid \lambda=1 \right) &= P_{1}\left( k \, e^{-\sum_i X_i} <  2^{n}e^{-2\sum_i X_i} \right)\cr &
+= P_1\left(e^{\sum_i X_i} < 2^{n}/k\right) \cr & = P_1\left(\sum_i X_i <  n\log 2-\log(k)  \right)  = \alpha
+\end{split}\]
+
+
+Since $\sum_i X_i\sim Gamma(n,1)$, one can find $k$.
+
+```{r, echo = FALSE, message=FALSE, out.width="80%"}
+
+c = qgamma(0.05,10,rate=1)
+#k=(exp(c))/(2^20)
+x = seq(0,20,0.01)
+plot(x,dgamma(x,10,rate=1),type='l', col='darkred', ylab = expression(f(x / lambda )) , xlab='x', ylim = c(0,max(dgamma(x,10,rate=2))))
+par(new=TRUE)
+plot(x,dgamma(x,10,rate=2),type='l', col='darkgreen', ylab='', xlab='', ylim = c(0,max(dgamma(x,10,rate=2))))
+legend('topright', legend= c('H0','H1'), col = c('darkred','darkgreen'),lty = 1:1 )
+abline(v = c)
+
+```
+
+
+## Likelihood ratio test {.section}
+
+ According to N-P Lemma, test of the form:
+  $$R=\left\{\boldsymbol x : \frac{f(\boldsymbol x\mid \theta_1)}{f(\boldsymbol x\mid \theta_0)}\geq k\right\}$$
+  is an MP test of level $\alpha= P_{\theta_0}(\boldsymbol X \in R)$ (unless the event 
+  $\left\{ \frac{f(\boldsymbol x\mid \theta_1)}{f(\boldsymbol x\mid \theta_0)} = k\right\}$ has positive probabilty, in that case randomization is necessary).
+
+The region $R$ is defined as the ratio between the likelihood function under the alternative and the likelihood function under the null hypothesis. 
+
+This is very simple because NP Lemma only considers simple hypothesis (both for $H_0$ and $H_1$). 
+
+This suggests the definition of likelihood ratio tests for arbitrary testing problems.
+
+### Generalized likelihood ratio tests
+
+Suppose we have
+  $$H_0: \theta \in \Theta_0 \quad vs \quad H_1: \theta \in \Theta_o^c$$
+The values fof $\theta$ under $H_0$ and $H_1$ are not unique 
+
+However, suppose that the MLE exists over the whole parameter space $\Theta=\Theta_0\cup\Theta_0^c$
+
+We can also obtain the MLE for $\theta$ under the null hypothesis (through constrained optimization):
+$$\hat{\theta}_0 = \arg\max_{\theta \in \Theta_0} \ell(\theta\mid \boldsymbol x)= \arg\max_{\theta \in \Theta_0} \log f(\boldsymbol x \mid \theta)$$
+Then, we take the ratio between the likelihood under $H_0$, $f(\boldsymbol x \mid \hat{\theta}_0)$ and the likelihood under the parameter space $\Theta$ (that is the unconstrained MLE):
+$$\hat{\theta} = \arg\max_{\theta \in \Theta} \ell(\theta\mid \boldsymbol x)$$
+
+
+The (generalized) likelihood ratio test statistic is then:
+  $$ \lambda(\boldsymbol x)= \frac{\max_{\theta \in \Theta} L({\theta}\mid \boldsymbol x)}{\max_{\theta \in \Theta_0} L({\theta}\mid \boldsymbol x)} = \frac{L(\hat{\theta}\mid \boldsymbol x)}{L(\hat{\theta_0}\mid \boldsymbol x)} = \frac{f(\boldsymbol x \mid \hat{\theta})}{f(\boldsymbol x \mid \hat{\theta}_0)} $$
+
+
+* In typical situations, only one of the optimizations is constrained
+
+* The numerator is always larger than the denominator (only equal to 1 if $\hat{\theta}_0=\hat{\theta}$)
+
+* The smaller the ratio, the larger the evidence in favor of the null
+
+* The larger the ratio, the larger the evidence against the null
+
+The *likelihood ratio test* (LRT) is any test that
+   has a rejection region of the form :
+$\{\boldsymbol{x}: \lambda(\boldsymbol{x}) \geq c\}$ where $c$ is any number
+satisfying $c>1$.
+
+<!-- #### Example (ex. 17.2 [@Keener2010]) -->
+
+<!-- Let $(X_1,Y_1)\ldots,(X_n,Y_n)$ be a (iid) sample from a bivariate normal distribution. -->
+
+<!-- The loglikelihood is: -->
+<!-- $$\begin{split}&\ell(\mu_x,\mu_y,\rho,\sigma_x,\sigma_y) = -n\log \left(2\pi \sigma_x\sigma_y \sqrt{1-\rho^2}\right) \cr & \quad -\frac{1}{2(1-\rho^2)} \sum_i \left[\!\left(\frac{X_i-\mu_x}{\sigma_x}\right)^2\!+\!\left(\frac{Y_i-\mu_y}{\sigma_y}\right)^2\!-\!2\rho \left(\frac{X_i-\mu_x}{\sigma_x}\right)\!\left(\frac{Y_i-\mu_y}{\sigma_y}\right)\!\right] \end{split}$$ -->
+<!-- We consider -->
+
+### Monotone likelihood ratio
+
+To generalize the optimality result of Neyman and Pearson to non-simple hypotheses, we need to introduce the following:
+
+**Def:** A family of pdfs $\{f(x\mid  \theta); \, \theta \in \Theta\}$ has monotone likelihood ratio if there exists a function $T(x)$ such that whenever $\theta_2>\theta_1$, the ratio $$\frac{f(t\mid \theta_2)}{f(t\mid\theta_1)}$$ is a nondecreasing
+function of $t=T(x)$ on $$\mathscr{x}=\{t:\,f(t\mid \theta_1)>0 \;\; \mbox{or} \;\; f(t\mid\theta_2)>0\}.$$
+Further, the distribution is identifiable, that is $g(t; \theta_1)\neq g(t; \theta_2)$ whenever $\theta_1\neq \theta_2$
+
+**Example** The exponential family
+$$f(x\mid \theta) = \exp\left\{ w(\theta)t(x) -b(\theta)\right\}h(x) $$
+if $w(\theta)$ strictly increasing has likelihood ratio monotone in $T=t(x)$.
+
+**Example** Another example of MLR distributions are location families with densities $g(x-\theta)$ for which $-log g$ is convex. (See example 1 Ch.9 @lehmann1986)
+
+### Karlin and Rubin theorem for one-sided tests
+
+Consider the one-sided composite test
+
+$$H_0: \theta \leq \theta_0 \quad \mbox{vs} \quad H_1: \theta>\theta_0$$
+
+**Theorem (Karlin and Rubin)**
+Suppose that $X$ has density $f(x\mid \theta)$ with monotone likelihood ratio in $T(x)$. 
+Then:
+
+<ol>
+<li> The test $\phi^*$ defined by
+$$\phi^*(x)=\left\{\begin{array}{ll}
+1 & T(x)>c\\
+\gamma & T(x)=c\\
+0 & T(x)<c
+\end{array}\right.$$
+is a uniformly most powerful (UMP) level $\alpha$ test where $\alpha =E_{\theta_0} \phi^*$.
+
+The constants $c$ and $\gamma$ can be adjusted to attain the desired significance level.
+
+<li> The power function of $\phi^*$ is nondecreasing, strictly increasing if $0<\beta(\theta)<1$
+</ol>
+
+
+**Proof**
+
+*Power is nondecreasing.*
+Suppose $\theta_1<\theta_2$ and set
+$$L(x)=\frac{f(x\mid \theta_2)}{f(x\mid \theta_1)}=\frac{g(T(x)\mid \theta_2)}{g(T(x)\mid \theta_1)}$$
+By assumption, $L$ is a nondecreasing function of $T(x)$. Let $k$ be such that $(T=c) \mapsto (L=k)$. Then
+$$\phi^*(x)=\left\{\begin{array}{ll}
+1 & L>k\\
+0 & L<k
+\end{array}\right.$$ is a likelihood ratio test for the simple hypothesis $H_0: \theta=\theta_1$ vs $H_1: \theta=\theta_2$. By the corollary to the N-P Lemma, this test is most powerful and thus (see Corollary 12.4. [@Keener2010]) $E_{\theta_1} \phi^* \leq E_{\theta_2} \phi^*$  (with strict inequality unless both expetations are either 0 or 1).
+
+So, $\phi^*$ has level 
+$$\sup_{\theta \leq \theta_0} E_{\theta}\phi^*(X)= E_{\theta_0} \phi^*(X) = \alpha $$ and nondecreasing power as stated in 2.
+
+*$\phi^*$ is UMP*
+
+It remains to show that any test $\tilde{\phi}$ such that $E_{\theta_0} \tilde{\phi}(X) \leq \alpha$
+has lower power than $\phi^*$.
+
+Take an arbitrary $\theta_1>\theta_0$. From the NP Lemma, $\phi^{*}$ 
+is the most powerful test for the simple hypothesis 
+  $H_0: \theta = \theta_{0}$ against the alternative 
+  $H_1: \theta = \theta_{1}$, 
+  thus implying $E_{\theta_1}\phi^*\geq E_{\theta_1}\tilde{\phi}$
+
+
+<!-- Similarly, if $\theta_1<\theta_0$, the inequality $E_{\theta_1}\phi^*\geq E_{\theta_1}\tilde{\phi}$  follows because $\phi^*$ is also a LR test for $\theta=\theta_1$ against $\theta = \theta_{0} $ and thus (see the proof of NP Lemma) $$E_{\theta_0}\phi^* - k' E_{\theta_1}\phi^* \geq E_{\theta_0}\tilde{\phi} - k' E_{\theta_1}\tilde{\phi} $$ -->
+<!-- for some critical level $k'$ -->
+<!-- If in particular $\tilde{\phi}$ is such that $E_{\theta_0}\tilde{\phi}=\alpha =E_{\theta_0}\phi^*$, this implies $E_{\theta_1}\phi^*\leq E_{\theta_1}\tilde{\phi}$ -->
+
+**Choice of $c$ and $\gamma$**
+
+Finally, we show that $c$ nd $\gamma$ can be chosen so that $E_{\theta_0}\phi^*=\alpha$.
+Let $G_0$ be the CDF of $T(X)$ when $\theta=\theta_0$.
+Let $c=\sup\{t: G_0(t)\leq 1-\alpha\}$.
+
+- If $t=T(x)>c$, then $G_0(t)>1-\alpha$. 
+- $G_0$ is right continuous, so
+  $\quad G_0(c) = \lim_{t\downarrow c} G_0(t) \geq 1-\alpha$
+- For $t<c$, $\quad G_0(t)\leq 1-\alpha\quad$ 
+and 
+    $\quad G_0(c^-) = \lim_{t\uparrow c} G_0(t) \leq 1-\alpha$
+
+- Define $$\gamma=\frac{G_0(c)-(1-\alpha)}{G_0(c)-G_0(c^-)}=\frac{G_0(c)-(1-\alpha)}{P_{\theta_0}(T=c)}$$
+(note that if $G_0(c)-G_0(c^-)=0$, then $\gamma$ need not to be defined).
+
+- Finally, 
+$$E_{\theta_0}\phi^* = \gamma P_{\theta_0}(T=c) + 1\cdot P_{\theta_0}(T>c) = G_0(c)-(1-\alpha) + (1-G_0(c))=\alpha$$
+
+### Two-sided hypotheses
+
+This example is to show that there can't be a UMP test in the case of two-sided alternatives.
+
+Consider the hypothesis
+$$H_0: \theta=\theta_0 \mbox{ vs } H_1: \theta \neq \theta_0,$$
+where $\theta$ is the population mean from a Gaussian family with known variance $\sigma^2$.
+
+- Suppose we define a test with $R_1(\boldsymbol X)=\{T(\boldsymbol X)\leq t_0\}$
+$$\alpha=P(\bar{X}\leq t_0\mid \theta_0) = P\left(\frac{\bar{X}-\theta_0}{\sigma/\sqrt{n}}\leq \frac{t_0-\theta_0}{\sigma/\sqrt{n}}\right)$$
+Then, $\frac{t_0-\theta_0}{\sigma/\sqrt{n}} = z_{\alpha}\Rightarrow t_0=\theta_0 + z_\alpha\frac{\sigma}{\sqrt{n}} = \theta_0 - z_{1-\alpha}\frac{\sigma}{\sqrt{n}}$
+
+And, by Karlin-Rubin, this
+test is UMP for $$H_0: \theta =  \theta_0 \quad vs \quad H_1: \theta < \theta_0 .$$
+
+- Repeat the same reasoning with $R_2(\boldsymbol X)=\{ T(\boldsymbol X)\geq t_0\}$, we get
+$$\alpha=P(\bar{X}\geq t_0\mid \theta_0) = P\left(\frac{\bar{X}-\theta_0}{\sigma/\sqrt{n}}\geq \frac{t_0-\theta_0}{\sigma/\sqrt{n}}\right)$$
+Now $t_0=\theta_0 + z_{1-\alpha}\frac{\sigma}{\sqrt{n}}=\theta_0 - z_{\alpha}\frac{\sigma}{\sqrt{n}}$
+is UMP for $$H_0: \theta =  \theta_0 \quad vs \quad H_1: \theta > \theta_0 .$$
+
+- The power of the test based on $R_1$ is $$\beta_1(\theta)= P_\theta\left( \bar{X}< \theta_0 - z_{1-\alpha}\frac{\sigma}{\sqrt{n}} \right)=
+P_\theta\left(\frac{\bar{X}-\theta}{\sigma/\sqrt{n}}< \frac{\theta_0-\theta}{\sigma/\sqrt{n}}-z_{1-\alpha}\right)$$
+
+- The power of the test based on $R_2$ is $$\beta_2(\theta)= P_\theta\left( \bar{X}> \theta_0 + z_{1-\alpha}\frac{\sigma}{\sqrt{n}} \right)=
+P_\theta\left(\frac{\bar{X}-\theta}{\sigma/\sqrt{n}}> \frac{\theta_0-\theta}{\sigma/\sqrt{n}}+z_{1-\alpha}\right)$$
+
+- Let $\theta^\prime>\theta_0$, then 
+\[\begin{split}\beta_1(\theta^\prime) &  = P_{\theta^\prime}\left(\frac{\bar{X}-\theta^\prime}{\sigma/\sqrt{n}}\leq \frac{\theta_0-\theta^\prime}{\sigma/\sqrt{n}}-z_{1-\alpha}\right) = \Phi\left(\frac{\theta_0-\theta^\prime}{\sigma/\sqrt{n}}-z_{1-\alpha}\right) \cr 
+& < \Phi\left(-z_{1-\alpha}\right)= 1-\Phi\left(z_{1-\alpha}\right) < 1- \Phi\left(\frac{\theta_0-\theta^\prime}{\sigma/\sqrt{n}}+z_{1-\alpha}\right) = \beta_2(\theta^\prime) 
+\end{split}
+\]
+
+- Similarly, for $\theta^\prime<\theta_0$, $\beta_2(\theta^\prime)<\beta_1(\theta^\prime)$, so there is no UMP
+
+
+## Unbiased and UMPU tests {.section}
+
+- The reason why in many cases we can't find the UMP test is that the class $\mathscr{C}$ of level-$\alpha$ tests is too large.
+
+- We can compromise by restricting the class of tests we consider to compare the power functions 
+in the a subclass of *unbiased* test statistics 
+
+**Def:** A test for the hypothesis $$\theta \in \Theta_0 \quad vs \quad \theta \in \Theta_0^c$$
+with power function $\beta(\theta)$ is called \emph{unbiased} if
+$$\beta(\theta^\prime) \geq \beta(\theta'') \quad \mbox{for all $\theta^\prime \in \Theta_0^c$ and $\theta'' \in \Theta_0$}$$
+
+- An unbiased test must reject a false hypothesis (any $\theta^\prime \in \Theta_0^c$) with a probability larger than the probability to reject a true hypothesis ($\theta'' \in \Theta_0$).
+
+- If $\alpha= \sup_{\theta \in \Theta_0}\beta(\theta)$ is the size of the unbiased test, then $$\beta(\theta)\geq \alpha, \quad \mbox{for all } \theta \in \Theta_0^c.$$
+
+- *A test that is uniformly most powerful among all umbiased tests is called an UMPU test*
+
+### UMPU tests
+
+- UMPU tests for the two-sided hypothesis 
+$$H_0: \theta=\theta_0 \quad \mbox{vs}\quad H:1 \theta \neq \theta_0$$
+exist for exponential families.
+
+**Theorem** Let $\alpha \in (0,1)$ and $\theta_0 \in int(\Theta)$. If $X$ has a distribution of the form
+$$f(x\mid \theta) = c(\theta) h(x) \exp\left\{t(x) w(\theta)\right\}$$
+with $\infty > w'(\theta_0) >0$. Then there exists a uniformly most powerful unbiased test $\phi^*$ of level $\alpha$, satisfying $\beta'(\theta_0)=0$
+
+
+- $\phi^*$ is a two-sided test: namely takes the form
+$$\phi=\left\{\begin{array}{cc}
+1 & (T<t_l)\cup(T>t_u)\\
+0 & t_l<T<t_u \end{array}\right.$$
+and $\min\{E\phi 1\{T \leq t_l\},E\phi 1\{T \geq t_u\}\}>0$.
+
+### $\mathscr{C}_m$ tests
+
+The previous theorem comes as a corollary case of the following more general result:
+
+- Let $\phi^+$ and $\phi^-$ be thw UMP tests for the one-sided alternatives $\theta>\theta_0$ and $\theta<\theta_0$ with powers $\beta_+(\theta)$ and $\beta_-(\theta)$.
+
+- From UMP property of $\phi^+$ and $\phi_-$ it is easy to see that for any test $\phi$,
+$$m_-=:\beta_-'(\theta_0)\leq \beta_{\phi}'(\theta_0) \leq \lim_{\varepsilon \downarrow 0}\frac{\beta_{+}(\theta_0+\varepsilon)-\beta_{+}(\theta_0)}{\varepsilon}=\beta'_+(\theta_0):=m_+$$
+
+- Now, denote $\mathscr{C}_m$ the class of level $\alpha$ tests such that $\beta_{\phi}'(\theta_0)=m$
+
+- Note that unbiased tests must have $m=0$: suppose for example $m<0$, then $\beta'_{\phi}(\theta_0)=m$ and $\beta_{\phi}$ is decreasing at $\theta_0$. Thus, for $\theta' >\theta_0$, we get $\beta_{\phi}(\theta')<\beta_\phi(\theta_0)$, that contradicts unbiasedness, because $\theta' \in \Theta_1$
+
+
+### UMP tests in $\mathscr{C}_m$
+
+**Theorem (th.12.22 in Keener, 2010)**
+Let $\alpha \in (0,1)$ and $\theta_0 \in int(\Theta)$. If $X$ has a distribution of the form
+$$f(x\mid \theta) = c(\theta) h(x) \exp\left\{t(x) w(\theta)\right\}$$ with $\infty > w'(\theta_0) >0$. If $m \in (m_-,m_+)$ there exists a UMP level $\alpha$ test in $\mathscr{C}_m$, say $\phi^*$.
+
+$\phi^*$ is a two-sided test.
+
+
+
+- It is easy to see that (th, 12.20 @Keener2010), for the exponential family as above:
+$$\beta'_\phi(\theta)= w'(\theta) E_\theta (T\phi)+d(\log c(\theta))E_\theta \phi $$
+
+**Example**
+Let $X \sim exponential(\theta)$: $f(x \mid \theta)= \theta e^{-\theta x}$ for $x>0$.
+
+Consider testing $H_0: \theta=1$ vs $H_1:\theta\neq 1$ based on one observation only.
+
+The UMPU test then has the form:
+$$\phi=\left\{\begin{array}{cc}
+1 & (X<t_l)\cup(X>t_u)\\
+0 & t_l<X<t_u \end{array}\right.$$
+where $t_u,t_l$ must satisfy
+$$E_1 \phi = 1- \int_{t_l}^{t_u} e^{-x}dx = 1- e^{-t_l}-e^{-t_u}=\alpha$$
+with the constraint $\beta'_\phi(\theta_0)=0$, that implies
+$$0=w'(1)  E_1 \phi X + d(\log(c(1)) E_1 \phi = 1-\int_{t_l}^{t_u} xe^{-x}dx +  \stackrel{\alpha}{\overbrace{E_1 \phi}} $$
+Putting the two equations together:
+$$t_l e^{-t_l} =-(e^{-t_l}-1+\alpha)\log\left(e^{-t_l}-1+\alpha\right)$$
+The solution has to be found numerically.
+
+Solving for $P(X\leq t_l)=P(X>t_u)=\alpha/2$ simplifies the computation, but in this case the test is biased, because $m(\theta_0)=\beta'_\phi(\theta_0)\neq 0$
+
+
+```{r, echo=FALSE}
+
+tl = seq(0,0.09,by=0.00001)
+
+sliderInput("alpha", label = "alpha",
+              min=0.001, max=0.1, value = 0.05, step=0.0001)
+
+renderPlot({
+        par(mar = c(3, 4, 1, .5))
+        plot(tl, 1-(1+tl)*exp(-tl)+(exp(-tl)-1+as.numeric(input$alpha))*(1-log(exp(-tl)-1+as.numeric(input$alpha)))-as.numeric(input$alpha), type='l', col='darkgreen', ylab='m', xlab='tl')
+abline(h=0,col='red',lty=2)
+abline(v = -log(1-as.numeric(input$alpha)/2),col='blue',lty=1)
+text(x=-log(1-as.numeric(input$alpha)/2)- 0.002 , y=0.01, srt=90, paste('tl=',round(-log(1-as.numeric(input$alpha)/2),3),sep=''), col='blue')
+}
+)
+
+```
+
+## Confidence sets {.section}
+
+### Duality between tests and confidence sets
+
+Tests and confidence intervals a have a one-2-one correspondence:
+
+Recall that a random set $S(X)$ is a $1-\alpha$ confidence region for a parameter $\theta$ if 
+$$P_\theta(\theta \in S(X))\geq 1-\alpha, \forall \theta \in \Theta.$$
+
+- Let $\phi$ be a level $\alpha$ binary test with acceptance region $A(\theta_0)$ for the hypothesis $\theta=\theta_0$.
+
+Then the region $S(X)=\{\theta: X \in A(\theta)\}$ is a $1-\alpha$ confidence region. In fact:
+$$P_\theta(\theta \in S(X))=P_\theta(X\in A(\theta))\geq 1-\alpha$$
+
+- Conversely, given the $1-\alpha$ confidence region $S$,
+the test
+$$\phi(X)=\left\{\begin{array}{cc} 1 & \theta_0 \in S(X)^c\\
+0 & \theta_0 \in S(X)\end{array}\right.$$ is a level $\alpha$ test for $\theta=\theta_0$ against $\theta\neq \theta_0$.
+
+- Optimality of tests should correspond to optimal confidence interval (in some sense).
+
+- Consider a confidence set $S(X)$ defined as the inverse of a binary two-sided test $\phi$ (we assume for convenience $\Theta =(\theta_l,\theta_u)$ with $\max(|\theta_l|,|\theta_u|) = \infty$ allowed). 
+
+- Let $\lambda(A)$ be the Lebesgue measure of the set $A$. The average length of the confidence interval $S$ based on the test $\phi$ is:
+$$\begin{split}E_\theta \lambda(S(X)\setminus\{\theta\} ) & = E_\theta \int_{\Theta \setminus \{\theta\} } 1\{\theta_0 \in S(X)\}d\theta_0 = \int_{\mathscr{X}}\int_{\Theta \setminus \{\theta\}} 1\{\theta_0 \in S(X)\}d\theta_0 dP_{\theta}(x)\cr & = \int_{\Theta \setminus \{\theta\}} P_\theta(\theta_0 \in S(X)) d\theta_0 = \int_{\Theta \setminus \{\theta\}} P_\theta(X \in A(\theta_0)) d\theta_0 
+\cr & =\int_{\Theta \setminus \{\theta\}} (1-\beta(\theta_0))d\theta_0\end{split}$$
+Since a UMP(U) test $\phi^*$ maximizes $\beta^*(\theta_0)$ for all $\theta_0\neq \theta$, the mean length of the corresponding confidence set $S^*$ is 
+$$E_\theta \lambda(S(X)\setminus\{\theta\})\geq E_\theta \lambda(S^*(X)\setminus\{\theta\})$$
+
+
+**Example**
+Let $X \sim exponential(\lambda)$ (with $\lambda=E X$). Suppose we want a confidence interval for $\lambda$.
+
+We can obtain it by inverting a LR test for
+$$H_0 : \lambda= \lambda_0 \quad vs \quad H_1: \lambda \ne \lambda_0$$
+
+Le LRT statistic is:
+$$\lambda(\boldsymbol x)=\frac{\lambda_0^{-1} \exp\{-\sum_i x_i/\lambda_0\}}{\sup_{\lambda>0} \lambda^{-1} \exp\{-\sum_i x_i/\lambda\}}=\frac{\lambda_0^{-1} \exp\{-\sum_i x_i/\lambda_0\}}{\bar{x}^{-1} \exp\{-\sum_i x_i/\bar{x}\}} = \left(\frac{\bar{x}}{\lambda_0}\right)^n e^{\frac{-n\bar{x}}{\lambda_0}+n}$$
+
+Rejection region is for small values of $\lambda (\boldsymbol x)$
+
+So, acceptance region is 
+$$A(\lambda_0) = \left\{\boldsymbol x: \, \left(\frac{\bar{x}}{\lambda_0}\right)^n e^{-n(\bar{x}/\lambda_0-1)} \geq k \right\} $$
+where $k$ is defined implicitly by $P_{\lambda_0}\left(\boldsymbol X \not \in A(\lambda_0)  \right)=\alpha.$
+
+Then, we obtain the confidence interval:
+\[\begin{split}
+CI(\boldsymbol x) &= \left\{\lambda: \left(\frac{\bar{x}}{\lambda}\right)^n e^{-n(\bar{x}/\lambda-1)} \geq k \right\} = \left\{\lambda: \left(\frac{\bar{x}}{\lambda}\right)^n e^{-n\bar{x}/\lambda} \geq k e^{-n} \right\} 
+\end{split}\]
+
+```{r, echo=FALSE}
+
+n=50
+X=rexp(n,0.5)
+Xbar=mean(X)
+lambda=seq(1,3,by=0.001)
+plot(lambda,(Xbar/lambda)^n*exp(-n*(Xbar/lambda-1)),type='l', col='darkblue',ylab='',xlab='lambda')
+abline(h = 0.75, col='red',lty=2)
+
+```
+
+### Pivotal Random Variables
+
+**Def.:** A random variable $Q(\boldsymbol X,\theta)$ is a **pivotal quantity** (or pivot) if its distribution does not depend on the
+parameter $\theta$. Here $\boldsymbol {X}$ is the random sample.
+
+- If the pivotal quantity can be inverted as a
+function of $\theta$ for each value of $\boldsymbol X$ , then we
+may find a confidence region (interval) for $\theta$.
+- Inversion means that, for each $\boldsymbol x$ and each subset $A$ of the range of
+$Q(\boldsymbol x,\theta)$, there exists a
+subset $R(\boldsymbol x, A)$ of $\Theta$ such that
+$$ Q(\boldsymbol x,\theta) \in A \, \Longleftrightarrow \, \theta \in R(\boldsymbol x,A)$$
+This implies that
+$$ P(Q(\boldsymbol X,\theta) \in A)=P(\theta \in R(\boldsymbol X,A))$$
+- From a (nontrivial) pivotal random
+variable one can often obtain a confidence interval
+- In general there may be more than one pivotal random variable and
+confidence intervals
+
+
+### Minimum lenght confidence intervals
+
+An optimality theorem for confidence intervals is available for unimodal distributions.
+
+**Theorem(9.3.2 @CasellaBerger2024)**
+Assume $T=T(X)$ is a pivotal statistic for $\theta$ and that its distribution $f(t)$ is unimodal. 
+If in the interval $[a,b]$ satisfies
+    
+1. $\int_a^b f(t)dt=1-\alpha$
+    
+2. $f(a)=f(b)>0$
+    
+3. $a \leq t^{\star} \leq b$ where $t^{\star}$ is a mode for $f(t)$
+  
+  Then $[a,b]$ is the **shortest among all intervals** that satisfies $\int_a^b f(t)dt=1-\alpha$.
+
+
+
+**Example (continued)**
+
+```{r data, echo=FALSE}
+
+#M=1
+
+selectInput(
+   'n', label = "sample size",
+   choices = c(5,10,20,50,100), selected = 10
+ )
+sliderInput("p", label = "alpha_1:",
+              min = 0, max = 0.0499, value = 0.025, step = 0.0001)
+
+  renderPlot({
+    req(input$n, input$p)
+    set.seed(101)
+    par(mar = c(5, 6, 1, .5))
+    Y = matrix(rexp(as.numeric(input$n),1/as.numeric(0.5))
+                      ,1,as.numeric(input$n))
+    L = qchisq(as.numeric(input$p),2*as.numeric(input$n))/(2*sum(Y))
+    U = qchisq((0.95+as.numeric(input$p)),2*as.numeric(input$n))/(2*sum(Y))
+    length = round(U-L,digits=4)
+    
+    #Z = 2*as.numeric(0.5)*sum(Y)
+      plot(seq(0,6*as.numeric(input$n), by=0.1),dchisq(seq(0,6*as.numeric(input$n), by=0.1),2*as.numeric(input$n)), type='l', col = 'darkred', main = paste('Distribution of the pivot Q. The length of the corresponding confidence interval is: ',round(length,5),sep=' '),xlab = '', ylab = '')
+      abline(v = qchisq(as.numeric(input$p),2*as.numeric(input$n)), col = "blue", lwd =3)
+      abline(v = qchisq((0.95+as.numeric(input$p)),2*as.numeric(input$n)), col = "blue", lwd =3)
+
+            polygon(
+  c(L*(2*sum(Y)),seq(L*(2*sum(Y)),U*(2*sum(Y)), by = 0.01),U*(2*sum(Y))),
+  c(0,dchisq(seq(L*(2*sum(Y)),U*(2*sum(Y)), by = 0.01),2*as.numeric(input$n)),0),
+  col = "gray", border=NA, fillOddEven= TRUE)
+
+      abline(h = dchisq(qchisq(as.numeric(input$p),2*as.numeric(input$n)),2*as.numeric(input$n)), col = "green", lwd =2,lty=2)
+      text(2*as.numeric(input$n), dchisq(qchisq(as.numeric(input$p),2*as.numeric(input$n)),2*as.numeric(input$n))*(1+0.2), "f(a)", col = 'darkgreen')
+      abline(h = dchisq(qchisq((0.95+as.numeric(input$p)),2*as.numeric(input$n)),2*as.numeric(input$n)), col = "green", lwd =2,lty=2)
+text(2*as.numeric(input$n), dchisq(qchisq((0.95+as.numeric(input$p)),2*as.numeric(input$n)),2*as.numeric(input$n))*(1+0.2), "f(b)", col = 'darkgreen')
+
+            }
+  ) 
+  
+  
+```
+
+
+
+## Fisher vs Neyman {.section}
+
+- The approach outlined so far follows Neyman-Pearson hypothesis testing framework:
+the problem of testing is treated as a decision problem.
+
+- Neyman-Pearson wanted to find a mathematical justification to the significance tests of the Fisher school.
+
+- Even so, Fisher was quite adamant in opposing their approach.
+
+ >- Fisher refused the idea of the *optimality* as a property of a procedure, and claimed the central role of the experience of the research in making an informed decision conditional on the problem
+
+ >- Therefore, maximization of power is not relevant. Fisher is not very much interested in the alternative: a large value of the test statistic gives evidence against the null, because it makes less plausible the null hypothesis (low probability to observe that value under the null)
+
+
+
+<!-- Two different philosophies in Fisher and Neyman-Pearson approaches. . Thus, Fisher is more focused on measuring the significance level or the p-value (but at the time when Fisher was active the computation of p-values was not easy). -->
+
+
+- The approach outlined so far follows Neyman-Pearson hypothesis testing framework:
+the problem of testing is treated as a decision problem.
+
+- Neyman-Pearson wanted to find a mathematical justification to the significance tests of the Fisher school.
+
+- Even so, Fisher was quite adamant in opposing their approach.
+
+- While for N-P, the choice based on optimality is pre-experimental, for Fisher every conclusion (significance level) must be conditional on an available distribution constant. N-P principle is coherent with the idea of repetibility of the experiment
+
+- Sometimes the contrast is also referred as c contrast between p-values (or significance) and *pre-determined $\alpha$ level*. 
+
+### P-variables and p-values 
+
+Let us consider the null hypothesis $\Theta_0$. 
+
+**Def:** A $p-$variable for $\Theta_0$ is a $[0,1]-$valued random variable $U$ such that, for every $\alpha \in (0,1)$, and for all $\theta \in \Theta_0$:
+$$P_{\theta}(U\leq \alpha)\leq \alpha$$
+The $p-$variable is exact if $P_{\theta}(U\leq \alpha)= \alpha$.
+
+**Def:** A $p-$value is the value taken by the $p-$variable on observing the data.
+
+A test that rejects $H_0: \theta \in \Theta_0$ if and only if $U=U(\boldsymbol X)\leq \alpha$ is a level $\alpha$ test by construction.
+
+A test result can be reported via its $p-$value rather than the acceptance/rejection decision. This clearly gives more information, because it reports the result of the test on a continuous scale.
+
+
+**Theorem**
+Let $\phi$ be a one-sided test with rejection region $R(\theta)=\{T(\boldsymbol X)\geq k\}$.
+Define for each sample point $\boldsymbol x$, the function
+$$p(\boldsymbol x) = \sup_{\theta \in \Theta_0} P_\theta (T(\boldsymbol X)\geq T(\boldsymbol x))$$
+Then, the r.v. $p(\boldsymbol X)$ is a $p-$variable.
+
+**Proof.** For any $\theta_0 \in \Theta_0$ 
+$$p_{\theta_0}(\boldsymbol x)=P_{\theta_0} (T(\boldsymbol X)\geq T(\boldsymbol x)) =P_{\theta_0} (-T(\boldsymbol X)\leq -T(\boldsymbol x)) = F_{\theta_0}(-T(\boldsymbol x)) $$
+where $F_{\theta_0}$ is the CDF of $-T(\boldsymbol X)$ under $\theta_0$.
+Then, by the probability integral transform, $F_{\theta_0}(-T(\boldsymbol X))\stackrel{d}{=}p_{\theta_0}(\boldsymbol X) \sim U(0,1)$.
+
+Thus, for any $\alpha \in (0,1)$,
+$P_{\theta} \left(p(\boldsymbol X)\leq \alpha\right)=P_{\theta} \left(\sup_{\theta } p_{\theta}(\boldsymbol X)\leq \alpha\right) \leq  P_{\theta} \left(p_{\theta}(\boldsymbol X)\leq \alpha\right)=\alpha$
+
+
+## References
+
